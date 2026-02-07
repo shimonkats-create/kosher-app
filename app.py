@@ -16,18 +16,20 @@ if "GEMINI_KEY" not in st.secrets:
 
 genai.configure(api_key=st.secrets["GEMINI_KEY"])
 
-# מנגנון בחירת מודל חכם ומהיר
+# מנגנון בחירת מודל חכם - פותר את שגיאת ה-404
 @st.cache_resource
 def get_model():
-    # השם היציב ביותר לגרסת ה-Flash
-    model_id = 'gemini-1.5-flash' 
-    try:
-        return genai.GenerativeModel(model_id)
-    except:
-        # גיבוי: חיפוש מודל Flash זמין אחר אם השם למעלה נכשל
-        models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-        fast_model = next((m for m in models if 'flash' in m), models[0])
-        return genai.GenerativeModel(fast_model)
+    # סריקה של כל המודלים הזמינים בחשבון שלך
+    available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+    
+    # עדיפות ראשונה: מודל flash (מהיר)
+    # עדיפות שנייה: מודל pro
+    # עדיפות שלישית: המודל הראשון ברשימה
+    selected_model = next((m for m in available_models if 'flash' in m), 
+                          next((m for m in available_models if 'pro' in m), 
+                          available_models[0]))
+    
+    return genai.GenerativeModel(selected_model)
 
 model = get_model()
 
@@ -78,7 +80,6 @@ if uploaded_file:
             [Hebrew full list, suspicious in **bold**]
             """
             try:
-                # הוספנו את המודל היציב
                 response = model.generate_content([prompt, fast_img])
                 parts = response.text.split("---")
                 header = parts[0].strip()
