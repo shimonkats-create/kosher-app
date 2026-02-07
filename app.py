@@ -43,13 +43,20 @@ st.markdown("<h1 style='text-align: right;'>🔍 ניתוח רכיבים אוט�
 
 uploaded_file = st.file_uploader("צלם או העלה תמונה", type=["jpg", "jpeg", "png"])
 
+# --- החלק החדש למחיקת תצוגה קודמת ---
+if uploaded_file:
+    # אם העלינו קובץ חדש ששונה מהקובץ האחרון שעיבדנו - נמחק את התצוגה הישנה מיד
+    if "last_processed" in st.session_state and st.session_state.last_processed != uploaded_file.name:
+        if "last_result" in st.session_state:
+            del st.session_state.last_result
+# ---------------------------------------
+
 if uploaded_file:
     img = PIL.Image.open(uploaded_file)
     st.image(img, use_container_width=True)
     
-    # בדיקה אם התמונה כבר עובדה כדי למנוע כפל עיבוד
     if "last_processed" not in st.session_state or st.session_state.last_processed != uploaded_file.name:
-        with st.spinner('מנתח רכיבים...'):
+        with st.spinner('מנתח רכיבים חדשים...'):
             prompt = """
             נתח את התמונה טכנית. אל תכתוב פסיקות הלכתיות.
             
@@ -78,16 +85,16 @@ if uploaded_file:
                 
                 st.session_state.history.append(result_obj)
                 st.session_state.last_result = result_obj
-                st.session_state.last_processed = uploaded_file.name # סימון שהקובץ טופל
+                st.session_state.last_processed = uploaded_file.name
+                st.rerun() # מרענן את הדף כדי להציג את התוצאה החדשה בלבד
                 
             except Exception as e:
                 st.error(f"שגיאה בניתוח: {e}")
 
-# הצגת התוצאה
+# הצגת התוצאה (תופיע רק אם יש תוצאה רלוונטית)
 if "last_result" in st.session_state:
     res = st.session_state.last_result
     st.markdown("---")
-    # הצגת הכותרת עם הסמלים החדשים
     st.markdown(f"<div style='text-align: right; direction: rtl; font-size: 18px; font-weight: bold; line-height: 1.8;'>{res['header']}</div>", unsafe_allow_html=True)
     
     if res['detail']:
