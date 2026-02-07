@@ -1,22 +1,44 @@
 import streamlit as st
 import PIL.Image
 import google.generativeai as genai
+from datetime import datetime
 
 # הגדרות דף
 st.set_page_config(page_title="סורק כשרות AI", page_icon="🛒", layout="centered")
 
+# ניהול זיכרון היסטוריה
+if "history" not in st.session_state:
+    st.session_state.history = []
+
 # בדיקת מפתח API
 if "GEMINI_KEY" not in st.secrets:
-    st.error("חסר מפתח API! הגדר אותו ב-Settings -> Secrets של Streamlit")
+    st.error("חסר מפתח API! הגדר אותו ב-Settings -> Secrets")
     st.stop()
 
-# חיבור ל-Gemini
 genai.configure(api_key=st.secrets["GEMINI_KEY"])
-model = genai.GenerativeModel('gemini-1.5-flash')
+
+# מנגנון בחירת מודל אוטומטי למניעת שגיאת 404
+@st.cache_resource
+def get_model():
+    models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+    # מחפש מודל flash, אם אין לוקח את הראשון ברשימה
+    model_name = next((m for m in models if 'flash' in m), models[0])
+    return genai.GenerativeModel(model_name)
+
+model = get_model()
+
+# תפריט צד להיסטוריה
+with st.sidebar:
+    st.title("🕒 סריקות אחרונות")
+    if not st.session_state.history:
+        st.write("אין עדיין סריקות")
+    for i, item in enumerate(reversed(st.session_state.history)):
+        if st.button(f"סריקה {len(st.session_state.history)-i}: {item['time']}", key=f"hist_{i}"):
+            st.session_state.last_result = item
 
 st.markdown("<h1 style='text-align: right;'>🔍 ניתוח רכיבים טכני</h1>", unsafe_allow_html=True)
 
-uploaded_file = st.file_uploader("צלם או העלה תמונה של הרכיבים", type=["jpg", "jpeg", "png"])
+uploaded_file = st.file_uploader("צלם או העלה תמונה", type=["jpg", "jpeg", "png"])
 
 if uploaded_file:
     img = PIL.Image.open(uploaded_file)
@@ -45,11 +67,24 @@ if uploaded_file:
                 full_res = response.text
                 parts = full_res.split("---")
                 
-                st.markdown("---")
-                st.markdown(f"<div style='text-align: right; direction: rtl; font-size: 18px; font-weight: bold;'>{parts[0]}</div>", unsafe_allow_html=True)
+                header = parts[0].strip()
+                detail = parts[1].strip() if len(parts) > 1 else ""
                 
-                if len(parts) > 1:
-                    with st.expander("לפרטים נוספים ונימוק מפורט"):
-                        st.markdown(f"<div style='text-align: right; direction: rtl;'>{parts[1]}</div>", unsafe_allow_html=True)
+                # שמירה להיסטוריה
+                now = datetime.now().strftime("%H:%M")
+                result_obj = {"time": now, "header": header, "detail": detail}
+                st.session_state.history.append(result_obj)
+                st.session_state.last_result = result_obj
+                
             except Exception as e:
                 st.error(f"שגיאה בניתוח: {e}")
+
+# הצגת התוצאה האחרונה (מסריקה חדשה או מההיסטוריה)
+if "last_result" in st.session_state:
+    res = st.session_state.last_result
+    st.markdown("---")
+    st.markdown(f"<div style='text-align: right; direction: rtl; font-size: 18px; font-weight: bold; line-height: 1.8;'>{res['header']}</div>", unsafe_allow_html=True)
+    
+    if res['detail']:
+        with st.expander("לפרטים נוספים ונימוק מפורט"):
+            st.markdown(f"<div style='text-align: right; direction: rtl;'>{res['detail']}</div>", unsafe_allow_html=True)
