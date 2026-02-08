@@ -56,7 +56,7 @@ if uploaded_file:
     st.image(img, use_container_width=True)
     
     if "last_processed" not in st.session_state or st.session_state.last_processed != uploaded_file.name:
-        with st.spinner('מנתח רכיבים חדשים...'):
+        with st.spinner('מנתח רכיבים...'):
             prompt = """
             נתח את התמונה טכנית. אל תכתוב פסיקות הלכתיות.
             
