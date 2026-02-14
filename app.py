@@ -7,9 +7,11 @@ import urllib.parse
 # הגדרות דף
 st.set_page_config(page_title="סורק כשרות AI", page_icon="🛒", layout="centered")
 
-# ניהול זיכרון היסטוריה
+# ניהול זיכרון
 if "history" not in st.session_state:
     st.session_state.history = []
+if "scan_active" not in st.session_state:
+    st.session_state.scan_active = False
 
 # בדיקת מפתח API
 if "GEMINI_KEY" not in st.secrets:
@@ -26,19 +28,19 @@ def get_model():
 
 model = get_model()
 
-# תפריט צד להיסטוריה
+# תפריט צד
 with st.sidebar:
     st.title("🕒 סריקות אחרונות")
     if st.button("🗑️ נקה היסטוריה"):
         st.session_state.history = []
-        if "last_result" in st.session_state: del st.session_state.last_result
+        st.session_state.last_result = None
+        st.session_state.scan_active = False
         st.rerun()
     st.markdown("---")
-    if not st.session_state.history:
-        st.write("אין עדיין סריקות")
     for i, item in enumerate(reversed(st.session_state.history)):
         if st.button(f"סריקה {len(st.session_state.history)-i}: {item['time']}", key=f"hist_{i}"):
             st.session_state.last_result = item
+            st.session_state.scan_active = True
 
 # כותרת והבהרה
 st.markdown("<h1 style='text-align: right;'>🔍 ניתוח רכיבים אוטומטי</h1>", unsafe_allow_html=True)
@@ -48,41 +50,27 @@ st.markdown("""
     </p>
     """, unsafe_allow_html=True)
 
-# שימוש ב-Key כדי לזהות שינוי ב-Uploader
-uploaded_file = st.file_uploader("צלם או העלה תמונה", type=["jpg", "jpeg", "png"], key="new_upload")
+# --- לוגיקת זרימת עבודה חדשה ---
 
-# --- לוגיקת הניקוי המיידי ---
-# אם המשתמש בחר קובץ חדש, Uploader ישנה את המצב שלו. 
-# אנחנו בודקים אם הקובץ הנוכחי תואם למה שעיבדנו לאחרונה.
-if uploaded_file is not None:
-    if "last_processed_name" not in st.session_state:
-        st.session_state.last_processed_name = None
+# אם לא נמצאים באמצע סריקה - מציגים את כפתור ההעלאה
+if not st.session_state.scan_active:
+    uploaded_file = st.file_uploader("צלם או העלה תמונה", type=["jpg", "jpeg", "png"])
     
-    # ברגע שהשם שונה (קובץ חדש נבחר), אנחנו מוחקים את התוצאה מהתצוגה
-    if st.session_state.last_processed_name != uploaded_file.name:
-        if "last_result" in st.session_state:
-            del st.session_state.last_result
-# -----------------------------
-
-if uploaded_file:
-    img = PIL.Image.open(uploaded_file)
-    st.image(img, use_container_width=True)
-    
-    # הרצת ה-AI רק אם אין תוצאה קיימת בזיכרון עבור הקובץ הזה
-    if "last_result" not in st.session_state:
+    if uploaded_file:
+        img = PIL.Image.open(uploaded_file)
+        st.image(img, use_container_width=True)
+        
         with st.spinner('מנתח רכיבים...'):
             prompt = """
             נתח את התמונה טכנית. אל תכתוב פסיקות הלכתיות.
             1. זהה את כל רשימת הרכיבים ומספרי ה-E.
-            2. סמן ב-**בולד** כל רכיב שיש בו חשש כשרות טכני (ג'לטין, E471, E120, שומן מהחי, אבקות מרק בשריות וכו').
-            
-            ענה בעברית לפי המבנה המדויק הבא:
+            2. סמן ב-**בולד** כל רכיב שיש בו חשש כשרות טכני.
+            ענה בעברית לפי המבנה:
             1. רכיבים: 🟢 לא נמצאו חשודים / 🟡 נמצאו רכיבים הדורשים בדיקה / 🔴 קיימים רכיבים לא כשרים
             2. סוג: 🥦 פרווה / 🥛 חלבי / 🍖 בשרי
-            
-            נימוק קצר: [משפט טכני אחד על הרכיבים שהדגשת. לדוגמה: "caldo de pollo en polvo" (אבקת מרק עוף) הוא רכיב מן החי, ללא אישור כשרות למקורו]
+            נימוק קצר: [משפט טכני אחד. דוגמה: "אבקת מרק עוף" הוא רכיב מן החי ללא אישור כשרות]
             ---
-            [כאן רשום תרגום מלא של הרכיבים לעברית, כשהחשודים מודגשים ב**בולד**]
+            [תרגום מלא עם הדגשות]
             """
             try:
                 response = model.generate_content([prompt, img])
@@ -97,31 +85,32 @@ if uploaded_file:
                 
                 st.session_state.history.append(result_obj)
                 st.session_state.last_result = result_obj
-                st.session_state.last_processed_name = uploaded_file.name
+                st.session_state.scan_active = True # עוברים למצב תוצאה
                 st.rerun()
                 
             except Exception as e:
                 st.error(f"שגיאה בניתוח: {e}")
 
-# הצגת התוצאה
-if "last_result" in st.session_state:
-    res = st.session_state.last_result
-    st.markdown("---")
-    st.markdown(f"<div style='text-align: right; direction: rtl; font-size: 18px; font-weight: bold; line-height: 1.8;'>{res['header']}</div>", unsafe_allow_html=True)
-    
-    if res['detail']:
-        with st.expander("לפרטים נוספים ורכיבים מודגשים"):
-            st.markdown(f"<div style='text-align: right; direction: rtl;'>{res['detail']}</div>", unsafe_allow_html=True)
+# אם נמצאים במצב תוצאה - מציגים את התוצאה וכפתור "חדש"
+else:
+    if "last_result" in st.session_state:
+        res = st.session_state.last_result
+        st.markdown("---")
+        st.markdown(f"<div style='text-align: right; direction: rtl; font-size: 18px; font-weight: bold; line-height: 1.8;'>{res['header']}</div>", unsafe_allow_html=True)
+        
+        if res['detail']:
+            with st.expander("לפרטים נוספים ורכיבים מודגשים"):
+                st.markdown(f"<div style='text-align: right; direction: rtl;'>{res['detail']}</div>", unsafe_allow_html=True)
 
-    # כפתור וואטסאפ
-    share_text = f"תוצאות סריקת כשרות:\n{res['header']}\n\nרכיבים:\n{res['detail']}".replace('**', '')
-    whatsapp_url = f"https://wa.me/?text={urllib.parse.quote(share_text)}"
-    
-    st.markdown(f"""
-        <div style='text-align: right; margin-top: 20px;'>
-            <a href='{whatsapp_url}' target='_blank' style='text-decoration: none; background-color: #25D366; color: white; padding: 10px 20px; border-radius: 25px; font-weight: bold; display: inline-flex; align-items: center; gap: 8px;'>
-                <img src='https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg' width='20' height='20'>
-                שתף ב-WhatsApp
-            </a>
-        </div>
-    """, unsafe_allow_html=True)
+        # כפתור וואטסאפ
+        share_text = f"תוצאות סריקת כשרות:\n{res['header']}\n\nרכיבים:\n{res['detail']}".replace('**', '')
+        whatsapp_url = f"https://wa.me/?text={urllib.parse.quote(share_text)}"
+        st.markdown(f"<div style='text-align: right; margin-top: 10px;'><a href='{whatsapp_url}' target='_blank' style='text-decoration: none; background-color: #25D366; color: white; padding: 10px 20px; border-radius: 25px; font-weight: bold;'>שתף ב-WhatsApp</a></div>", unsafe_allow_html=True)
+        
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        # כפתור לסריקה חדשה
+        if st.button("🔄 סריקה חדשה", use_container_width=True):
+            st.session_state.last_result = None
+            st.session_state.scan_active = False
+            st.rerun()
