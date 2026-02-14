@@ -48,21 +48,27 @@ st.markdown("""
     </p>
     """, unsafe_allow_html=True)
 
-uploaded_file = st.file_uploader("צלם או העלה תמונה", type=["jpg", "jpeg", "png"])
+# כפתור העלאה עם מפתח ייחודי
+uploaded_file = st.file_uploader("צלם או העלה תמונה", type=["jpg", "jpeg", "png"], key="uploader")
 
-# --- שיפור: מחיקת תוצאה קודמת מיד עם העלאת קובץ חדש ---
+# --- המנגנון למחיקה מיידית ---
+# אם הקובץ הנוכחי שונה מהקובץ האחרון שעיבדנו, נמחק את התוצאה מיד
 if uploaded_file:
-    # אם שם הקובץ שונה ממה שעיבדנו לאחרונה, ננקה את התוצאה הישנה מהמסך מיד
-    if "last_processed" in st.session_state and st.session_state.last_processed != uploaded_file.name:
+    if "current_file_name" not in st.session_state:
+        st.session_state.current_file_name = None
+    
+    if st.session_state.current_file_name != uploaded_file.name:
         if "last_result" in st.session_state:
             del st.session_state.last_result
-# -----------------------------------------------------
+        st.session_state.current_file_name = uploaded_file.name
+# -----------------------------
 
 if uploaded_file:
     img = PIL.Image.open(uploaded_file)
     st.image(img, use_container_width=True)
     
-    if "last_processed" not in st.session_state or st.session_state.last_processed != uploaded_file.name:
+    # עיבוד רק אם אין תוצאה קיימת עבור הקובץ הזה
+    if "last_result" not in st.session_state:
         with st.spinner('מנתח רכיבים...'):
             prompt = """
             נתח את התמונה טכנית. אל תכתוב פסיקות הלכתיות.
@@ -90,13 +96,12 @@ if uploaded_file:
                 
                 st.session_state.history.append(result_obj)
                 st.session_state.last_result = result_obj
-                st.session_state.last_processed = uploaded_file.name
                 st.rerun()
                 
             except Exception as e:
                 st.error(f"שגיאה בניתוח: {e}")
 
-# הצגת התוצאה - תופיע רק אם יש תוצאה קיימת והיא רלוונטית לקובץ הנוכחי
+# הצגת התוצאה
 if "last_result" in st.session_state:
     res = st.session_state.last_result
     st.markdown("---")
