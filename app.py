@@ -40,7 +40,9 @@ with st.sidebar:
         if st.button(f"סריקה {len(st.session_state.history)-i}: {item['time']}", key=f"hist_{i}"):
             st.session_state.last_result = item
 
+# כותרת והבהרה
 st.markdown("<h1 style='text-align: right;'>🔍 ניתוח רכיבים אוטומטי</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: right; color: gray; font-size: 0.9em;'>המערכת מנתחת רכיבים טכנית באמצעות AI בלבד ואינה מהווה פסיקה הלכתית או תחליף לחותמת כשרות רשמית.</p>", unsafe_allow_html=True)
 
 uploaded_file = st.file_uploader("צלם או העלה תמונה", type=["jpg", "jpeg", "png"])
 
@@ -105,7 +107,6 @@ if "last_result" in st.session_state:
     share_text = f"תוצאות סריקת כשרות:\n{res['header']}\n\nרכיבים:\n{res['detail']}".replace('**', '')
     whatsapp_url = f"https://wa.me/?text={urllib.parse.quote(share_text)}"
     
-    # כפתור מעוצב עם סמל
     st.markdown(f"""
         <div style='text-align: right; margin-top: 20px;'>
             <a href='{whatsapp_url}' target='_blank' style='text-decoration: none; background-color: #25D366; color: white; padding: 10px 20px; border-radius: 25px; font-weight: bold; display: inline-flex; align-items: center; gap: 8px;'>
