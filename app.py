@@ -40,12 +40,11 @@ with st.sidebar:
         if st.button(f"סריקה {len(st.session_state.history)-i}: {item['time']}", key=f"hist_{i}"):
             st.session_state.last_result = item
 
-# כותרת והבהרה עם סימן קריאה אדום וטקסט לבן
+# כותרת והבהרה: טקסט לבן עם סימן קריאה אדום אחרי המילה "שימו לב"
 st.markdown("<h1 style='text-align: right;'>🔍 ניתוח רכיבים אוטומטי</h1>", unsafe_allow_html=True)
 st.markdown("""
-    <p style='text-align: right; color: white; font-size: 0.9em; margin-bottom: 20px; direction: rtl; line-height: 1.6;'>
-    <span style='color: #ff4b4b; font-weight: bold; font-size: 1.2em;'>!</span> 
-    שימו לב! המערכת מנתחת רכיבים באופן טכני באמצעות בינה מלאכותית. אין לראות בתוצאות פסיקה הלכתית או הכשר למוצר. בכל ספק יש להיוועץ ברב או לבדוק את סמל הכשרות על גבי האריזה.
+    <p style='text-align: right; direction: rtl; color: white; font-size: 0.9em; margin-bottom: 20px; line-height: 1.6;'>
+    שימו לב <span style='color: #ff4b4b; font-weight: bold; font-size: 1.2em;'>!</span> המערכת מנתחת רכיבים באופן טכני באמצעות בינה מלאכותית. אין לראות בתוצאות פסיקה הלכתית או הכשר למוצר. בכל ספק יש להיוועץ ברב או לבדוק את סמל הכשרות על גבי האריזה.
     </p>
     """, unsafe_allow_html=True)
 
