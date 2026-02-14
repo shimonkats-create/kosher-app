@@ -48,26 +48,27 @@ st.markdown("""
     </p>
     """, unsafe_allow_html=True)
 
-# כפתור העלאה עם מפתח ייחודי
-uploaded_file = st.file_uploader("צלם או העלה תמונה", type=["jpg", "jpeg", "png"], key="uploader")
+# שימוש ב-Key כדי לזהות שינוי ב-Uploader
+uploaded_file = st.file_uploader("צלם או העלה תמונה", type=["jpg", "jpeg", "png"], key="new_upload")
 
-# --- המנגנון למחיקה מיידית ---
-# אם הקובץ הנוכחי שונה מהקובץ האחרון שעיבדנו, נמחק את התוצאה מיד
-if uploaded_file:
-    if "current_file_name" not in st.session_state:
-        st.session_state.current_file_name = None
+# --- לוגיקת הניקוי המיידי ---
+# אם המשתמש בחר קובץ חדש, Uploader ישנה את המצב שלו. 
+# אנחנו בודקים אם הקובץ הנוכחי תואם למה שעיבדנו לאחרונה.
+if uploaded_file is not None:
+    if "last_processed_name" not in st.session_state:
+        st.session_state.last_processed_name = None
     
-    if st.session_state.current_file_name != uploaded_file.name:
+    # ברגע שהשם שונה (קובץ חדש נבחר), אנחנו מוחקים את התוצאה מהתצוגה
+    if st.session_state.last_processed_name != uploaded_file.name:
         if "last_result" in st.session_state:
             del st.session_state.last_result
-        st.session_state.current_file_name = uploaded_file.name
 # -----------------------------
 
 if uploaded_file:
     img = PIL.Image.open(uploaded_file)
     st.image(img, use_container_width=True)
     
-    # עיבוד רק אם אין תוצאה קיימת עבור הקובץ הזה
+    # הרצת ה-AI רק אם אין תוצאה קיימת בזיכרון עבור הקובץ הזה
     if "last_result" not in st.session_state:
         with st.spinner('מנתח רכיבים...'):
             prompt = """
@@ -96,6 +97,7 @@ if uploaded_file:
                 
                 st.session_state.history.append(result_obj)
                 st.session_state.last_result = result_obj
+                st.session_state.last_processed_name = uploaded_file.name
                 st.rerun()
                 
             except Exception as e:
