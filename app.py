@@ -50,10 +50,10 @@ st.markdown("""
     </p>
     """, unsafe_allow_html=True)
 
-# --- לוגיקת זרימת עבודה חדשה ---
+# --- זרימת עבודה: סריקה או תוצאה ---
 
-# אם לא נמצאים באמצע סריקה - מציגים את כפתור ההעלאה
 if not st.session_state.scan_active:
+    # מצב 1: העלאת תמונה
     uploaded_file = st.file_uploader("צלם או העלה תמונה", type=["jpg", "jpeg", "png"])
     
     if uploaded_file:
@@ -63,14 +63,16 @@ if not st.session_state.scan_active:
         with st.spinner('מנתח רכיבים...'):
             prompt = """
             נתח את התמונה טכנית. אל תכתוב פסיקות הלכתיות.
-            1. זהה את כל רשימת הרכיבים ומספרי ה-E.
-            2. סמן ב-**בולד** כל רכיב שיש בו חשש כשרות טכני.
-            ענה בעברית לפי המבנה:
-            1. רכיבים: 🟢 לא נמצאו חשודים / 🟡 נמצאו רכיבים הדורשים בדיקה / 🔴 קיימים רכיבים לא כשרים
-            2. סוג: 🥦 פרווה / 🥛 חלבי / 🍖 בשרי
-            נימוק קצר: [משפט טכני אחד. דוגמה: "אבקת מרק עוף" הוא רכיב מן החי ללא אישור כשרות]
+            משימות:
+            1. זהה את כל הרכיבים.
+            2. סמן ב-**בולד** כל רכיב עם חשש כשרות טכני.
+            
+            ענה בעברית לפי המבנה המדויק הבא:
+            רכיבים: [🟢 לא נמצאו חשודים / 🟡 נמצאו רכיבים הדורשים בדיקה / 🔴 קיימים רכיבים לא כשרים]
+            סוג: [🥦 פרווה / 🥛 חלבי / 🍖 בשרי]
+            נימוק קצר: [משפט אחד. דוגמה: אבקת מרק עוף הוא רכיב מן החי שלבדו אינו כשר ללא השגחה מתאימה]
             ---
-            [תרגום מלא עם הדגשות]
+            [כאן רשום את רשימת הרכיבים המלאה מתורגמת לעברית, כשהחשודים מודגשים ב**בולד**, לדוגמה: סוכר קנים, ביסקוויט (קמח חיטה, מלח, **E500**), **אבקת מרק עוף**...]
             """
             try:
                 response = model.generate_content([prompt, img])
@@ -85,31 +87,42 @@ if not st.session_state.scan_active:
                 
                 st.session_state.history.append(result_obj)
                 st.session_state.last_result = result_obj
-                st.session_state.scan_active = True # עוברים למצב תוצאה
+                st.session_state.scan_active = True
                 st.rerun()
                 
             except Exception as e:
                 st.error(f"שגיאה בניתוח: {e}")
 
-# אם נמצאים במצב תוצאה - מציגים את התוצאה וכפתור "חדש"
 else:
+    # מצב 2: הצגת תוצאה
     if "last_result" in st.session_state:
         res = st.session_state.last_result
-        st.markdown("---")
-        st.markdown(f"<div style='text-align: right; direction: rtl; font-size: 18px; font-weight: bold; line-height: 1.8;'>{res['header']}</div>", unsafe_allow_html=True)
         
+        st.markdown("---")
+        # תצוגת הכותרות והנימוק
+        st.markdown(f"<div style='text-align: right; direction: rtl; font-size: 18px; line-height: 1.8;'>{res['header']}</div>", unsafe_allow_html=True)
+        
+        # לחצן לפרטים נוספים (רשימת רכיבים)
         if res['detail']:
             with st.expander("לפרטים נוספים ורכיבים מודגשים"):
                 st.markdown(f"<div style='text-align: right; direction: rtl;'>{res['detail']}</div>", unsafe_allow_html=True)
 
         # כפתור וואטסאפ
-        share_text = f"תוצאות סריקת כשרות:\n{res['header']}\n\nרכיבים:\n{res['detail']}".replace('**', '')
+        share_text = f"תוצאות סריקת כשרות:\n{res['header']}\n\nפירוט רכיבים:\n{res['detail']}".replace('**', '')
         whatsapp_url = f"https://wa.me/?text={urllib.parse.quote(share_text)}"
-        st.markdown(f"<div style='text-align: right; margin-top: 10px;'><a href='{whatsapp_url}' target='_blank' style='text-decoration: none; background-color: #25D366; color: white; padding: 10px 20px; border-radius: 25px; font-weight: bold;'>שתף ב-WhatsApp</a></div>", unsafe_allow_html=True)
+        
+        st.markdown(f"""
+            <div style='text-align: right; margin-top: 20px;'>
+                <a href='{whatsapp_url}' target='_blank' style='text-decoration: none; background-color: #25D366; color: white; padding: 10px 20px; border-radius: 25px; font-weight: bold; display: inline-flex; align-items: center; gap: 8px;'>
+                    <img src='https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg' width='20' height='20'>
+                    שתף ב-WhatsApp
+                </a>
+            </div>
+        """, unsafe_allow_html=True)
         
         st.markdown("<br>", unsafe_allow_html=True)
         
-        # כפתור לסריקה חדשה
+        # כפתור לסריקה חדשה שמנקה את הכל
         if st.button("🔄 סריקה חדשה", use_container_width=True):
             st.session_state.last_result = None
             st.session_state.scan_active = False
