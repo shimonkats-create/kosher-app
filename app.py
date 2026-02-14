@@ -40,12 +40,12 @@ with st.sidebar:
         if st.button(f"סריקה {len(st.session_state.history)-i}: {item['time']}", key=f"hist_{i}"):
             st.session_state.last_result = item
 
-# כותרת והבהרה חשובה
+# כותרת והבהרה עם סימן קריאה אדום
 st.markdown("<h1 style='text-align: right;'>🔍 ניתוח רכיבים אוטומטי</h1>", unsafe_allow_html=True)
 st.markdown("""
-    <p style='text-align: right; color: #d32f2f; font-size: 0.85em; font-weight: bold; margin-bottom: 20px; border-right: 3px solid #d32f2f; padding-right: 10px;'>
-    שים לב! המערכת מנתחת רכיבים באופן טכני באמצעות בינה מלאכותית. אין לראות בתוצאות פסיקה הלכתית או הכשר למוצר. 
-    בכל ספק יש להיוועץ ברב או לבדוק את סמל הכשרות על גבי האריזה.
+    <p style='text-align: right; color: white; font-size: 0.85em; margin-bottom: 20px; direction: rtl;'>
+    <span style='color: #d32f2f; font-weight: bold; font-size: 1.2em;'>!</span> 
+    שים לב המערכת מנתחת רכיבים באופן טכני באמצעות בינה מלאכותית. אין לראות בתוצאות פסיקה הלכתית או הכשר למוצר. בכל ספק יש להיוועץ ברב או לבדוק את סמל הכשרות על גבי האריזה.
     </p>
     """, unsafe_allow_html=True)
 
@@ -69,7 +69,7 @@ if uploaded_file:
             2. סמן ב-**בולד** כל רכיב שיש בו חשש כשרות טכני (ג'לטין, E471, E120 וכו').
             
             ענה בעברית לפי המבנה:
-            1. רכיבים: [סטטוס צבעוני]
+            1. רכיבים: [סטטוס]
             2. סוג: [פרווה/חלבי/בשרי]
             נימוק: [משפט אחד]
             ---
@@ -104,9 +104,8 @@ if "last_result" in st.session_state:
         with st.expander("לפרטים נוספים ורכיבים מודגשים"):
             st.markdown(f"<div style='text-align: right; direction: rtl;'>{res['detail']}</div>", unsafe_allow_html=True)
 
-    # כפתור וואטסאפ עם הבהרה נוספת בטקסט השיתוף
-    warning_text = "\n\n*לתשומת לב: ניתוח טכני בלבד, אין להסתמך כפסיקת הלכה.*"
-    share_text = f"תוצאות סריקת כשרות:\n{res['header']}\n\nרכיבים:\n{res['detail']}{warning_text}".replace('**', '')
+    # כפתור וואטסאפ
+    share_text = f"תוצאות סריקת כשרות:\n{res['header']}\n\nרכיבים:\n{res['detail']}".replace('**', '')
     whatsapp_url = f"https://wa.me/?text={urllib.parse.quote(share_text)}"
     
     st.markdown(f"""
