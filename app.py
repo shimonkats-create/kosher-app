@@ -11,6 +11,8 @@ if "history" not in st.session_state:
     st.session_state.history = []
 if "scan_active" not in st.session_state:
     st.session_state.scan_active = False
+if "current_img" not in st.session_state:
+    st.session_state.current_img = None
 
 # בדיקת מפתח API
 if "GEMINI_KEY" not in st.secrets:
@@ -34,12 +36,14 @@ with st.sidebar:
         st.session_state.history = []
         st.session_state.last_result = None
         st.session_state.scan_active = False
+        st.session_state.current_img = None
         st.rerun()
     st.markdown("---")
     for i, item in enumerate(reversed(st.session_state.history)):
         if st.button(f"סריקה {len(st.session_state.history)-i}: {item['time']}", key=f"hist_{i}"):
             st.session_state.last_result = item
             st.session_state.scan_active = True
+            # הערה: ההיסטוריה שומרת טקסט, התמונה המוצגת תהיה של הסריקה האחרונה בלבד
 
 # כותרת והבהרה
 st.markdown("<h1 style='text-align: right;'>🔍 ניתוח רכיבים אוטומטי</h1>", unsafe_allow_html=True)
@@ -57,6 +61,7 @@ if not st.session_state.scan_active:
     
     if uploaded_file:
         img = PIL.Image.open(uploaded_file)
+        st.session_state.current_img = img # שמירת התמונה בזיכרון
         st.image(img, use_container_width=True)
         
         with st.spinner('מנתח רכיבים...'):
@@ -93,11 +98,15 @@ if not st.session_state.scan_active:
                 st.error(f"שגיאה בניתוח: {e}")
 
 else:
-    # מצב 2: הצגת תוצאה
+    # מצב 2: הצגת תוצאה + התמונה שנסרקה
     if "last_result" in st.session_state:
+        # הצגת התמונה שנשמרה
+        if st.session_state.current_img:
+            st.image(st.session_state.current_img, use_container_width=True, caption="התמונה שנסרקה")
+            
         res = st.session_state.last_result
-        
         st.markdown("---")
+        
         # תצוגת הכותרות והנימוק
         st.markdown(f"<div style='text-align: right; direction: rtl; font-size: 18px; line-height: 1.8;'>{res['header']}</div>", unsafe_allow_html=True)
         
@@ -112,4 +121,5 @@ else:
         if st.button("🔄 סריקה חדשה", use_container_width=True):
             st.session_state.last_result = None
             st.session_state.scan_active = False
+            st.session_state.current_img = None
             st.rerun()
