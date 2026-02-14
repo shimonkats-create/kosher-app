@@ -44,7 +44,7 @@ st.markdown("<h1 style='text-align: right;'>🔍 ניתוח רכיבים אוט�
 
 uploaded_file = st.file_uploader("צלם או העלה תמונה", type=["jpg", "jpeg", "png"])
 
-# --- החלק החדש למחיקת תצוגה קודמת ---
+# --- החלק למחיקת תצוגה קודמת ---
 if uploaded_file:
     if "last_processed" in st.session_state and st.session_state.last_processed != uploaded_file.name:
         if "last_result" in st.session_state:
@@ -101,7 +101,16 @@ if "last_result" in st.session_state:
         with st.expander("לפרטים נוספים ורכיבים מודגשים"):
             st.markdown(f"<div style='text-align: right; direction: rtl;'>{res['detail']}</div>", unsafe_allow_html=True)
 
-    # כפתור וואטסאפ פשוט שלא שובר את העיצוב
+    # יצירת כפתור WhatsApp עם סמל
     share_text = f"תוצאות סריקת כשרות:\n{res['header']}\n\nרכיבים:\n{res['detail']}".replace('**', '')
     whatsapp_url = f"https://wa.me/?text={urllib.parse.quote(share_text)}"
-    st.markdown(f"<div style='text-align: right;'><a href='{whatsapp_url}' target='_blank'>📲 שתף בוואטסאפ</a></div>", unsafe_allow_html=True)
+    
+    # כפתור מעוצב עם סמל
+    st.markdown(f"""
+        <div style='text-align: right; margin-top: 20px;'>
+            <a href='{whatsapp_url}' target='_blank' style='text-decoration: none; background-color: #25D366; color: white; padding: 10px 20px; border-radius: 25px; font-weight: bold; display: inline-flex; align-items: center; gap: 8px;'>
+                <img src='https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg' width='20' height='20'>
+                שתף ב-WhatsApp
+            </a>
+        </div>
+    """, unsafe_allow_html=True)
