@@ -40,18 +40,22 @@ with st.sidebar:
         if st.button(f"סריקה {len(st.session_state.history)-i}: {item['time']}", key=f"hist_{i}"):
             st.session_state.last_result = item
 
-# כותרת והבהרה
+# כותרת והבהרה חשובה
 st.markdown("<h1 style='text-align: right;'>🔍 ניתוח רכיבים אוטומטי</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: right; color: gray; font-size: 0.9em;'>המערכת מנתחת רכיבים טכנית באמצעות AI בלבד ואינה מהווה פסיקה הלכתית או תחליף לחותמת כשרות רשמית.</p>", unsafe_allow_html=True)
+st.markdown("""
+    <p style='text-align: right; color: #d32f2f; font-size: 0.85em; font-weight: bold; margin-bottom: 20px; border-right: 3px solid #d32f2f; padding-right: 10px;'>
+    שים לב! המערכת מנתחת רכיבים באופן טכני באמצעות בינה מלאכותית. אין לראות בתוצאות פסיקה הלכתית או הכשר למוצר. 
+    בכל ספק יש להיוועץ ברב או לבדוק את סמל הכשרות על גבי האריזה.
+    </p>
+    """, unsafe_allow_html=True)
 
 uploaded_file = st.file_uploader("צלם או העלה תמונה", type=["jpg", "jpeg", "png"])
 
-# --- החלק למחיקת תצוגה קודמת ---
+# ניהול רענון תצוגה
 if uploaded_file:
     if "last_processed" in st.session_state and st.session_state.last_processed != uploaded_file.name:
         if "last_result" in st.session_state:
             del st.session_state.last_result
-# ---------------------------------------
 
 if uploaded_file:
     img = PIL.Image.open(uploaded_file)
@@ -61,18 +65,15 @@ if uploaded_file:
         with st.spinner('מנתח רכיבים...'):
             prompt = """
             נתח את התמונה טכנית. אל תכתוב פסיקות הלכתיות.
-            
-            משימות ה"מוח":
             1. זהה את כל רשימת הרכיבים ומספרי ה-E.
-            2. סמן ב-**בולד** (כוכביות) כל רכיב שיש בו חשש כשרות טכני (כמו ג'לטין, E471, E120 וכו').
+            2. סמן ב-**בולד** כל רכיב שיש בו חשש כשרות טכני (ג'לטין, E471, E120 וכו').
             
-            ענה בעברית לפי המבנה הבא:
-            1. רכיבים: 🟢 לא נמצאו מצרכים לא כשרים / 🟡 חשש למצרכים לא כשרים במוצר / 🔴 קיימים מצרכים לא כשרים במוצר
-            2. סוג: 🥦 פרווה / 🥛 חלבי / 🍖 בשרי
-            
-            נימוק קצר: [משפט טכני אחד על הרכיבים שהדגשת]
+            ענה בעברית לפי המבנה:
+            1. רכיבים: [סטטוס צבעוני]
+            2. סוג: [פרווה/חלבי/בשרי]
+            נימוק: [משפט אחד]
             ---
-            [כאן רשום תרגום מלא של הרכיבים לעברית, כשהחשודים מודגשים ב**בולד**]
+            [רשימה מלאה עם הדגשות]
             """
             try:
                 response = model.generate_content([prompt, img])
@@ -93,7 +94,7 @@ if uploaded_file:
             except Exception as e:
                 st.error(f"שגיאה בניתוח: {e}")
 
-# הצגת התוצאה
+# תצוגת תוצאות
 if "last_result" in st.session_state:
     res = st.session_state.last_result
     st.markdown("---")
@@ -103,8 +104,9 @@ if "last_result" in st.session_state:
         with st.expander("לפרטים נוספים ורכיבים מודגשים"):
             st.markdown(f"<div style='text-align: right; direction: rtl;'>{res['detail']}</div>", unsafe_allow_html=True)
 
-    # יצירת כפתור WhatsApp עם סמל
-    share_text = f"תוצאות סריקת כשרות:\n{res['header']}\n\nרכיבים:\n{res['detail']}".replace('**', '')
+    # כפתור וואטסאפ עם הבהרה נוספת בטקסט השיתוף
+    warning_text = "\n\n*לתשומת לב: ניתוח טכני בלבד, אין להסתמך כפסיקת הלכה.*"
+    share_text = f"תוצאות סריקת כשרות:\n{res['header']}\n\nרכיבים:\n{res['detail']}{warning_text}".replace('**', '')
     whatsapp_url = f"https://wa.me/?text={urllib.parse.quote(share_text)}"
     
     st.markdown(f"""
