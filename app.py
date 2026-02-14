@@ -2,7 +2,6 @@ import streamlit as st
 import PIL.Image
 import google.generativeai as genai
 from datetime import datetime
-import urllib.parse
 
 # הגדרות דף
 st.set_page_config(page_title="סורק כשרות AI", page_icon="🛒", layout="centered")
@@ -70,9 +69,9 @@ if not st.session_state.scan_active:
             ענה בעברית לפי המבנה המדויק הבא:
             רכיבים: [🟢 לא נמצאו חשודים / 🟡 נמצאו רכיבים הדורשים בדיקה / 🔴 קיימים רכיבים לא כשרים]
             סוג: [🥦 פרווה / 🥛 חלבי / 🍖 בשרי]
-            נימוק קצר: [משפט אחד. דוגמה: אבקת מרק עוף הוא רכיב מן החי שלבדו אינו כשר ללא השגחה מתאימה]
+            נימוק קצר: [משפט אחד טכני]
             ---
-            [כאן רשום את רשימת הרכיבים המלאה מתורגמת לעברית, כשהחשודים מודגשים ב**בולד**, לדוגמה: סוכר קנים, ביסקוויט (קמח חיטה, מלח, **E500**), **אבקת מרק עוף**...]
+            [רשימת רכיבים מלאה מתורגמת לעברית, כשהחשודים מודגשים ב**בולד**]
             """
             try:
                 response = model.generate_content([prompt, img])
@@ -102,27 +101,14 @@ else:
         # תצוגת הכותרות והנימוק
         st.markdown(f"<div style='text-align: right; direction: rtl; font-size: 18px; line-height: 1.8;'>{res['header']}</div>", unsafe_allow_html=True)
         
-        # לחצן לפרטים נוספים (רשימת רכיבים)
+        # לחצן לפרטים נוספים
         if res['detail']:
             with st.expander("לפרטים נוספים ורכיבים מודגשים"):
                 st.markdown(f"<div style='text-align: right; direction: rtl;'>{res['detail']}</div>", unsafe_allow_html=True)
-
-        # כפתור וואטסאפ
-        share_text = f"תוצאות סריקת כשרות:\n{res['header']}\n\nפירוט רכיבים:\n{res['detail']}".replace('**', '')
-        whatsapp_url = f"https://wa.me/?text={urllib.parse.quote(share_text)}"
-        
-        st.markdown(f"""
-            <div style='text-align: right; margin-top: 20px;'>
-                <a href='{whatsapp_url}' target='_blank' style='text-decoration: none; background-color: #25D366; color: white; padding: 10px 20px; border-radius: 25px; font-weight: bold; display: inline-flex; align-items: center; gap: 8px;'>
-                    <img src='https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg' width='20' height='20'>
-                    שתף ב-WhatsApp
-                </a>
-            </div>
-        """, unsafe_allow_html=True)
         
         st.markdown("<br>", unsafe_allow_html=True)
         
-        # כפתור לסריקה חדשה שמנקה את הכל
+        # כפתור לסריקה חדשה
         if st.button("🔄 סריקה חדשה", use_container_width=True):
             st.session_state.last_result = None
             st.session_state.scan_active = False
