@@ -40,7 +40,7 @@ with st.sidebar:
         if st.button(f"סריקה {len(st.session_state.history)-i}: {item['time']}", key=f"hist_{i}"):
             st.session_state.last_result = item
 
-# כותרת והבהרה: טקסט לבן עם סימן קריאה אדום אחרי המילה "שימו לב"
+# כותרת והבהרה
 st.markdown("<h1 style='text-align: right;'>🔍 ניתוח רכיבים אוטומטי</h1>", unsafe_allow_html=True)
 st.markdown("""
     <p style='text-align: right; direction: rtl; color: white; font-size: 0.9em; margin-bottom: 20px; line-height: 1.6;'>
@@ -50,11 +50,13 @@ st.markdown("""
 
 uploaded_file = st.file_uploader("צלם או העלה תמונה", type=["jpg", "jpeg", "png"])
 
-# ניהול רענון תצוגה
+# --- שיפור: מחיקת תוצאה קודמת מיד עם העלאת קובץ חדש ---
 if uploaded_file:
+    # אם שם הקובץ שונה ממה שעיבדנו לאחרונה, ננקה את התוצאה הישנה מהמסך מיד
     if "last_processed" in st.session_state and st.session_state.last_processed != uploaded_file.name:
         if "last_result" in st.session_state:
             del st.session_state.last_result
+# -----------------------------------------------------
 
 if uploaded_file:
     img = PIL.Image.open(uploaded_file)
@@ -65,13 +67,13 @@ if uploaded_file:
             prompt = """
             נתח את התמונה טכנית. אל תכתוב פסיקות הלכתיות.
             1. זהה את כל רשימת הרכיבים ומספרי ה-E.
-            2. סמן ב-**בולד** כל רכיב שיש בו חשש כשרות טכני (ג'לטין, E471, E120 וכו').
+            2. סמן ב-**בולד** כל רכיב שיש בו חשש כשרות טכני (ג'לטין, E471, E120, שומן מהחי, אבקות מרק בשריות וכו').
             
             ענה בעברית לפי המבנה המדויק הבא:
             1. רכיבים: 🟢 לא נמצאו חשודים / 🟡 נמצאו רכיבים הדורשים בדיקה / 🔴 קיימים רכיבים לא כשרים
             2. סוג: 🥦 פרווה / 🥛 חלבי / 🍖 בשרי
             
-            נימוק קצר: [משפט טכני אחד על הרכיבים שהדגשת]
+            נימוק קצר: [משפט טכני אחד על הרכיבים שהדגשת. לדוגמה: "caldo de pollo en polvo" (אבקת מרק עוף) הוא רכיב מן החי, ללא אישור כשרות למקורו]
             ---
             [כאן רשום תרגום מלא של הרכיבים לעברית, כשהחשודים מודגשים ב**בולד**]
             """
@@ -94,7 +96,7 @@ if uploaded_file:
             except Exception as e:
                 st.error(f"שגיאה בניתוח: {e}")
 
-# תצוגת תוצאות
+# הצגת התוצאה - תופיע רק אם יש תוצאה קיימת והיא רלוונטית לקובץ הנוכחי
 if "last_result" in st.session_state:
     res = st.session_state.last_result
     st.markdown("---")
