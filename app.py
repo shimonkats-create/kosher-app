@@ -44,7 +44,7 @@ with st.sidebar:
             st.session_state.last_result = item
             st.session_state.scan_active = True
 
-# כותרת והבהרה - צבע הטקסט הוסר כדי שיהיה דינמי לפי ערכת הנושא
+# כותרת והבהרה - טקסט דינמי (מתאים לשחור/לבן)
 st.markdown("<h1 style='text-align: right;'>🔍 ניתוח רכיבים אוטומטי</h1>", unsafe_allow_html=True)
 st.markdown("""
     <p style='text-align: right; direction: rtl; font-size: 0.9em; margin-bottom: 20px; line-height: 1.6;'>
@@ -52,10 +52,9 @@ st.markdown("""
     </p>
     """, unsafe_allow_html=True)
 
-# --- זרימת עבודה: סריקה או תוצאה ---
+# --- זרימת עבודה ---
 
 if not st.session_state.scan_active:
-    # מצב 1: העלאת תמונה
     uploaded_file = st.file_uploader("צלם או העלה תמונה", type=["jpg", "jpeg", "png"])
     
     if uploaded_file:
@@ -66,16 +65,17 @@ if not st.session_state.scan_active:
         with st.spinner('מנתח רכיבים...'):
             prompt = """
             נתח את התמונה טכנית. אל תכתוב פסיקות הלכתיות.
-            משימות:
-            1. זהה את כל הרכיבים.
-            2. סמן ב-**בולד** כל רכיב עם חשש כשרות טכני.
+            
+            דגשים חשובים:
+            - אם המוצר מכיל רק אגוזים טבעיים, פירות יבשים ללא תוספות או חומרי גלם טבעיים בלבד - סמן 🟢.
+            - רק אם יש רכיב חשוד מפורש (E-numbers חשודים, ג'לטין, שומן מהחי) סמן 🟡 או 🔴.
             
             ענה בעברית לפי המבנה המדויק הבא:
             רכיבים: [🟢 לא נמצאו חשודים / 🟡 נמצאו רכיבים הדורשים בדיקה / 🔴 קיימים רכיבים לא כשרים]
             סוג: [🥦 פרווה / 🥛 חלבי / 🍖 בשרי]
-            נימוק קצר: [משפט אחד טכני]
+            נימוק קצר: [משפט אחד טכני על הרכיבים]
             ---
-            [רשימה מלאה של הרכיבים מתורגמת לעברית, כשהחשודים מודגשים ב**בולד**]
+            [רשימת רכיבים מלאה מתורגמת, חשודים ב**בולד**]
             """
             try:
                 response = model.generate_content([prompt, img])
@@ -97,25 +97,21 @@ if not st.session_state.scan_active:
                 st.error(f"שגיאה בניתוח: {e}")
 
 else:
-    # מצב 2: הצגת תוצאה + התמונה שנסרקה
     if "last_result" in st.session_state:
         if st.session_state.current_img:
-            st.image(st.session_state.current_img, use_container_width=True, caption="התמונה שנסרקה")
+            st.image(st.session_state.current_img, use_container_width=True)
             
         res = st.session_state.last_result
         st.markdown("---")
         
-        # תצוגת הכותרות והנימוק (ללא צבע קבוע כדי שיתאים לערכת הנושא)
         st.markdown(f"<div style='text-align: right; direction: rtl; font-size: 18px; line-height: 1.8;'>{res['header']}</div>", unsafe_allow_html=True)
         
-        # לחצן לפרטים נוספים
         if res['detail']:
             with st.expander("לפרטים נוספים ורכיבים מודגשים"):
                 st.markdown(f"<div style='text-align: right; direction: rtl;'>{res['detail']}</div>", unsafe_allow_html=True)
         
         st.markdown("<br>", unsafe_allow_html=True)
         
-        # כפתור לסריקה חדשה
         if st.button("🔄 סריקה חדשה", use_container_width=True):
             st.session_state.last_result = None
             st.session_state.scan_active = False
