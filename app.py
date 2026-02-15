@@ -43,12 +43,11 @@ with st.sidebar:
         if st.button(f"סריקה {len(st.session_state.history)-i}: {item['time']}", key=f"hist_{i}"):
             st.session_state.last_result = item
             st.session_state.scan_active = True
-            # הערה: ההיסטוריה שומרת טקסט, התמונה המוצגת תהיה של הסריקה האחרונה בלבד
 
-# כותרת והבהרה
+# כותרת והבהרה - צבע הטקסט הוסר כדי שיהיה דינמי לפי ערכת הנושא
 st.markdown("<h1 style='text-align: right;'>🔍 ניתוח רכיבים אוטומטי</h1>", unsafe_allow_html=True)
 st.markdown("""
-    <p style='text-align: right; direction: rtl; color: white; font-size: 0.9em; margin-bottom: 20px; line-height: 1.6;'>
+    <p style='text-align: right; direction: rtl; font-size: 0.9em; margin-bottom: 20px; line-height: 1.6;'>
     שימו לב <span style='color: #ff4b4b; font-weight: bold; font-size: 1.2em;'>!</span> המערכת מנתחת רכיבים באופן טכני באמצעות בינה מלאכותית. אין לראות בתוצאות פסיקה הלכתית או הכשר למוצר. בכל ספק יש להיוועץ ברב או לבדוק את סמל הכשרות על גבי האריזה.
     </p>
     """, unsafe_allow_html=True)
@@ -61,7 +60,7 @@ if not st.session_state.scan_active:
     
     if uploaded_file:
         img = PIL.Image.open(uploaded_file)
-        st.session_state.current_img = img # שמירת התמונה בזיכרון
+        st.session_state.current_img = img 
         st.image(img, use_container_width=True)
         
         with st.spinner('מנתח רכיבים...'):
@@ -76,7 +75,7 @@ if not st.session_state.scan_active:
             סוג: [🥦 פרווה / 🥛 חלבי / 🍖 בשרי]
             נימוק קצר: [משפט אחד טכני]
             ---
-            [רשימת רכיבים מלאה מתורגמת לעברית, כשהחשודים מודגשים ב**בולד**]
+            [רשימה מלאה של הרכיבים מתורגמת לעברית, כשהחשודים מודגשים ב**בולד**]
             """
             try:
                 response = model.generate_content([prompt, img])
@@ -100,14 +99,13 @@ if not st.session_state.scan_active:
 else:
     # מצב 2: הצגת תוצאה + התמונה שנסרקה
     if "last_result" in st.session_state:
-        # הצגת התמונה שנשמרה
         if st.session_state.current_img:
             st.image(st.session_state.current_img, use_container_width=True, caption="התמונה שנסרקה")
             
         res = st.session_state.last_result
         st.markdown("---")
         
-        # תצוגת הכותרות והנימוק
+        # תצוגת הכותרות והנימוק (ללא צבע קבוע כדי שיתאים לערכת הנושא)
         st.markdown(f"<div style='text-align: right; direction: rtl; font-size: 18px; line-height: 1.8;'>{res['header']}</div>", unsafe_allow_html=True)
         
         # לחצן לפרטים נוספים
